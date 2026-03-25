@@ -1,12 +1,19 @@
 from fastapi import FastAPI, status, HTTPException
-from schemas import UserLogin, UserResponse, UserRegister
+from schemas import (
+    UserLogin,
+    UserResponse,
+    UserRegister,
+    CategoryCreate,
+    CategoryResponse,
+)
 from utilities import hash_password, verify_password
 from datetime import datetime
 
 
 app = FastAPI()
 
-users = []
+users: list[UserResponse] = []
+categories: list[CategoryResponse] = []
 
 
 @app.get("/")
@@ -81,3 +88,33 @@ def login_user(data: UserLogin):
         status_code=status.HTTP_404_NOT_FOUND,
         detail="User not found, please register first",
     )
+
+
+@app.get(
+    "/api/categories",
+    response_model=list[CategoryResponse],
+    status_code=status.HTTP_200_OK,
+)
+def get_categories():
+    if not categories:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Categories not found"
+        )
+
+    return categories
+
+
+@app.post(
+    "/api/categories",
+    status_code=status.HTTP_201_CREATED,
+    response_model=CategoryResponse,
+)
+def add_category(category: CategoryCreate):
+    id = len(categories) + 1
+
+    category = category.model_dump()
+    category["id"] = id
+
+    categories.append(category)
+
+    return category
